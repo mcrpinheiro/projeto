@@ -13,15 +13,22 @@ registo1 = [{"data": '10-11',
                 "perimetro": 120,
                 "dor": 8,
                 "febre": True,
-                "evolucao": 'c',
-                "risco": 'b'},
+                "evolucao": 'negativa',
+                "risco": 'elevado'},
             {"data": '11-11',
                 "area": 120,
                 "perimetro": 120,
                 "dor":9,
                 "febre": True,
-                "evolucao": 'c',
-                "risco": 'b'}]
+                "evolucao": 'positiva',
+                "risco": 'baixo'},
+            {"data": '12-11',
+                "area": 120,
+                "perimetro": 120,
+                "dor":10,
+                "febre": False,
+                "evolucao": 'positiva',
+                "risco": 'baixo'}]
 
 #print(pLista(registo1, "data"))
 
@@ -44,19 +51,28 @@ def listarValores(lista):
         return "."
     return ", ".join(str(x) for x in lista) + "."
 
-def avaliar (registos, p):
-    avaliacao = ""
-    counter = 0
-    if p == "evolucao":
+def avaliar (registos):
+        counterEv = 0
         listaEvolucao = pLista(registos, "evolucao")
         for parametro in listaEvolucao:
             if parametro == "positiva":
-                counter+=1
-        if counter >= len(listaEvolucao)/2:
-            avaliacao = "positiva"
-        
+                counterEv+=1
+        if counterEv >= len(listaEvolucao)/2:
+            avaliacaoEv = "positiva"
+        else:
+            avaliacaoEv = "negativa"
+        counterRi = 0
+        listaRisco = pLista(registos, "risco")
+        for parametro in listaRisco:
+            if parametro == "baixo":
+                counterRi+=1
+        if counterRi >= len(listaRisco)/2:
+            avaliacaoRi = "baixo"
+        else:
+            avaliacaoRi = "elevado"
+        return " A evolução do paciente é, de uma forma geral, " + avaliacaoEv + " e existe um risco de complicações " + avaliacaoRi + "."
 
-    return avaliacao
+
 def gerar_relatorio_geral(registos):
     dorMax = (max(pLista(registos, "dor")))
     dorMin = (min(pLista(registos, "dor")))
@@ -70,9 +86,10 @@ def gerar_relatorio_geral(registos):
         else:
             febreRegistada = " O paciente registou febre nos dias " + listarValores(diasFebre)
         relatorio+= febreRegistada
+    relatorio += avaliar(registos)
     return relatorio
 
-print(gerar_relatorio_geral(registo1))
+#print(gerar_relatorio_geral(registo1))
 def gerar_pdf(data):
     pdf = FPDF()
     pdf.add_page()

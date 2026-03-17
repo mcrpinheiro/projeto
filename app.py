@@ -15,7 +15,7 @@ st.title("Monitorização da Cicatrização - Protótipo")
 # Sidebar menu
 menu = st.sidebar.radio(
     "Menu",
-    ["Home", "Análise", "Histórico", "Sobre", "FAQ"]
+    ["Home", "Análise", "Histórico", "Análise Geral", "Sobre", "FAQ"]
 )
 
 if menu == "Home":
@@ -126,6 +126,11 @@ elif menu == "Histórico":
             file_name="relatorio_ferida.pdf",
             mime="application/pdf"
             )
+elif menu == "Análise Geral":
+    if st.session_state.historico:
+        st.write(functions.gerar_relatorio_geral(st.session_state.historico))
+    else:
+        st.write("Ainda não foram registados sintomas.")
 elif menu == "Sobre":
     st.write("Aplicativo de exemplo para monitorização de feridas com Streamlit.")
 elif menu == ("FAQ"):
