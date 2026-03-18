@@ -23,6 +23,3 @@ registo1 = [{"data": '10-11',
 
 #print(pLista(registo1, "data"))
 #print(gerar_relatorio_geral(registo1))
-#python -m uvicorn main:app --reload
-#cd 'C:\Users\Utilizador\Desktop\projeto'
-#python -m streamlit run app.py
