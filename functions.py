@@ -7,30 +7,6 @@ def pLista(registos, parametro):
         pL.append(registo[parametro])
     return pL
 
-#para teste
-registo1 = [{"data": '10-11',
-                "area": 120,
-                "perimetro": 120,
-                "dor": 8,
-                "febre": True,
-                "evolucao": 'negativa',
-                "risco": 'elevado'},
-            {"data": '11-11',
-                "area": 120,
-                "perimetro": 120,
-                "dor":9,
-                "febre": True,
-                "evolucao": 'positiva',
-                "risco": 'baixo'},
-            {"data": '12-11',
-                "area": 120,
-                "perimetro": 120,
-                "dor":10,
-                "febre": False,
-                "evolucao": 'positiva',
-                "risco": 'baixo'}]
-
-#print(pLista(registo1, "data"))
 
 def getDiaInt (registos, valor, parametro):
     for registo in registos:
@@ -82,17 +58,36 @@ def gerar_relatorio_geral(registos):
     else:
         diasFebre = getDiaStr(registos, True, "febre")
         if len(diasFebre) == 1:
-            febreRegistada = " O paciente registou febre no dia" + diasFebre + "."
+            # Usamos [0] para pegar no primeiro item da lista e transformá-lo em texto
+            febreRegistada = " O paciente registou febre no dia " + str(diasFebre[0]) + "."
         else:
+            # Usamos a função listarValores para formatar várias datas
             febreRegistada = " O paciente registou febre nos dias " + listarValores(diasFebre)
-        relatorio+= febreRegistada
+        relatorio += febreRegistada
     relatorio += avaliar(registos)
     return relatorio
 
-#print(gerar_relatorio_geral(registo1))
 def gerar_pdf(data):
     pdf = FPDF()
     pdf.add_page()
+    pdf.set_font("Arial", size=12)
+    
+    # Adicionar um logótipo (se tiveres um ficheiro logo.png na pasta)
+    pdf.image('logo.jpg', 10, 8, 33) 
+    
+    
+    # Mudar a cor do título (RGB: Azul escuro médico)
+    pdf.set_text_color(0, 51, 102)
+    pdf.set_font("Arial", 'B', 16)
+    pdf.cell(200, 10, txt="Relatório de Monitorização de Ferida", ln=True, align='C')
+    
+    pdf.ln(20) # Isto salta 20mm (2cm) para baixo, livrando o espaço do logo
+
+    # Linha divisória
+    pdf.line(10, 30, 200, 30)
+    
+    # Voltar à cor preta para o texto
+    pdf.set_text_color(0, 0, 0)
     pdf.set_font("Arial", size=12)
 
     # Assuming 'data' is a pandas Series

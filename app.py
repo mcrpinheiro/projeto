@@ -146,8 +146,3 @@ elif menu == ("FAQ"):
 
 # Abra o Streamlit num novo terminal:
 # streamlit run app.py
-
-
-#python -m uvicorn main:app --reload
-#cd 'C:\Users\Utilizador\Desktop\PI\servidor_medgemma'
-#python -m streamlit run app.py
