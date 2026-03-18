@@ -126,11 +126,34 @@ elif menu == "Histórico":
             file_name="relatorio_ferida.pdf",
             mime="application/pdf"
             )
+            
 elif menu == "Análise Geral":
+    st.subheader("📊 Painel de Evolução Clínica")
+    
     if st.session_state.historico:
+        # Converter para DataFrame e ordenar por data
+        df_grafico = pd.DataFrame(st.session_state.historico)
+        df_grafico['data'] = pd.to_datetime(df_grafico['data'], dayfirst=True)
+        df_grafico = df_grafico.sort_values('data')
+
+        # Criar colunas para os gráficos ficarem lado a lado
+        col1, col2 = st.columns(2)
+
+        with col1:
+            st.markdown("### Área da Ferida")
+            # Usar line_chart para ver a evolução da área
+            st.line_chart(df_grafico.set_index('data')['area'])
+
+        with col2:
+            st.markdown("### Nível de Dor")
+            # Usar bar_chart para destacar os picos de dor
+            st.bar_chart(df_grafico.set_index('data')['dor'])
+
+        st.divider()
         st.write(functions.gerar_relatorio_geral(st.session_state.historico))
     else:
-        st.write("Ainda não foram registados sintomas.")
+        st.info("Ainda não existem dados para gerar gráficos.")
+
 elif menu == "Sobre":
     st.write("Aplicativo de exemplo para monitorização de feridas com Streamlit.")
 elif menu == ("FAQ"):
@@ -146,3 +169,8 @@ elif menu == ("FAQ"):
 
 # Abra o Streamlit num novo terminal:
 # streamlit run app.py
+
+
+#python -m uvicorn main:app --reload
+#cd 'C:\Users\Utilizador\Desktop\PI\servidor_medgemma'
+#python -m streamlit run app.py
