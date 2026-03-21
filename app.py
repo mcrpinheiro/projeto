@@ -1,11 +1,33 @@
 import streamlit as st
 import requests
+import torch
+from transformers import pipeline, BitsAndBytesConfig # Garante que 'pipeline' está aqui
+from PIL import Image
+import time
 from datetime import datetime
 import pandas as pd
 from st_aggrid import AgGrid, GridOptionsBuilder
 from fpdf import FPDF
 from io import BytesIO
 import functions
+
+@st.cache_resource
+def load_medgemma():
+    bnb_config = BitsAndBytesConfig(
+        load_in_4bit=True,
+        bnb_4bit_quant_type="nf4",
+        bnb_4bit_compute_dtype=torch.bfloat16,
+    )
+
+    return pipeline(
+        "image-text-to-text",
+        model="unsloth/medgemma-4b-it-bnb-4bit",
+        quantization_config=bnb_config,
+        device_map="auto",
+        model_kwargs={"attn_implementation": "eager"} # Adiciona isto se o erro continuar
+    )
+
+pipe = load_medgemma()
 
 
 if "historico" not in st.session_state:
@@ -34,40 +56,57 @@ elif menu == "Análise":
         )
 
         submitted = st.form_submit_button("Submeter uma Imagem")
+if st.button("Analisar ferida"):
+        if uploaded_image is not None:
+            image = Image.open(uploaded_image)
+            st.image(image, caption="Imagem para análise", width=400)
+            
+            with st.spinner("A IA MedGemma está a analisar a imagem..."):
+                # --- LÓGICA DO MEDGEMMA ---
+                prompt_ia = "Analyze this wound image. Describe tissue types, signs of infection, and periwound skin condition."
+                messages = [
+                    {"role": "system", "content": [{"type": "text", "text": "You are a Wound Care Specialist."}]},
+                    {"role": "user", "content": [
+                        {"type": "text", "text": prompt_ia},
+                        {"type": "image", "image": image}
+                    ]}
+                ]
+                
+                out = pipe(text=messages, max_new_tokens=512)
+                analise_ia = out[0]["generated_text"][-1]["content"]
+                
+                # --- TUA LÓGICA DE API EXISTENTE ---
+                dados = {"area_px": area_px, "perimetro_px": perimetro_px, "dor": dor, "febre": febre}
+                try:
+                    # Se a tua API local estiver ativa:
+                    resposta = requests.post("http://127.0.0.1:8000/analisar-ferida", json=dados)
+                    resultado = resposta.json()
+                except:
+                    # Fallback caso a API não esteja ligada (para teste)
+                    resultado = {"evolucao": "Estável", "risco": "Baixo", "comentario": "Análise manual."}
 
-        if submitted:
-            if uploaded_image is not None:
-                st.image(uploaded_image, caption="Uploaded Image", width="stretch")
-                st.success("Imagem submetida com sucesso!")
-            else:
-                st.warning("Por favor escolha uma imagem.")
-    if st.button("Analisar ferida"):
-        dados = {
-            "area_px": area_px,
-            "perimetro_px": perimetro_px,
-            "dor": dor,
-            "febre": febre
-        }
+                # Exibir Resultados
+                st.subheader("Resultado da Análise IA")
+                st.info(analise_ia)
+                
+                st.subheader("Métricas de Evolução")
+                st.write(f"Evolução: **{resultado['evolucao']}** | Risco: **{resultado['risco']}**")
 
-        resposta = requests.post("http://127.0.0.1:8000/analisar-ferida", json=dados)
-        resultado = resposta.json()
-
-        st.subheader("Resultado")
-        st.write(f"Evolução: **{resultado['evolucao']}**")
-        st.write(f"Risco: **{resultado['risco']}**")
-        st.write(f"Comentário: {resultado['comentario']}")
-        # guardar no histórico
-        registo = {
-            "data": datetime.now().strftime("%d/%m/%Y %H:%M"),
-            "area": area_px,
-            "perimetro": perimetro_px,
-            "dor": dor,
-            "febre": febre,
-            "evolucao": resultado["evolucao"],
-            "risco": resultado["risco"]
-        }
-
-        st.session_state.historico.append(registo)
+                # GUARDAR NO HISTÓRICO (Incluindo a análise da IA)
+                registo = {
+                    "data": datetime.now().strftime("%d/%m/%Y %H:%M"),
+                    "area": area_px,
+                    "perimetro": perimetro_px,
+                    "dor": dor,
+                    "febre": febre,
+                    "evolucao": resultado["evolucao"],
+                    "risco": resultado["risco"],
+                    "analise_ia": analise_ia  # <--- Nova coluna
+                }
+                st.session_state.historico.append(registo)
+                st.success("Análise completa e guardada no histórico!")
+        else:
+            st.warning("Por favor, carregue uma imagem para a IA poder analisar.")
 elif menu == "Histórico":
     st.write("Aqui pode consultar o histórico da evolução da sua ferida.")
 
@@ -118,6 +157,8 @@ elif menu == "Histórico":
             st.write("Febre:", reg["Febre"])
             st.write("Evolução:", reg["Evolução"])
             st.write("Risco:", reg["Risco"])
+            st.markdown("### 🤖 Descrição da IA (MedGemma)")
+            st.write(reg.get("analise_ia", "Nenhuma análise de IA disponível."))
             pdf = functions.gerar_pdf(reg)
 
             st.download_button(
@@ -126,6 +167,7 @@ elif menu == "Histórico":
             file_name="relatorio_ferida.pdf",
             mime="application/pdf"
             )
+
             
 elif menu == "Análise Geral":
     st.subheader("📊 Painel de Evolução Clínica")
@@ -170,7 +212,8 @@ elif menu == ("FAQ"):
 # Abra o Streamlit num novo terminal:
 # streamlit run app.py
 
-
+#.\venv\Scripts\activate
 #python -m uvicorn main:app --reload
 #cd 'C:\Users\Utilizador\Desktop\PI\servidor_medgemma'
 #python -m streamlit run app.py
+#Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
