@@ -63,16 +63,20 @@ if st.button("Analisar ferida"):
             
             with st.spinner("A IA MedGemma está a analisar a imagem..."):
                 # --- LÓGICA DO MEDGEMMA ---
-                prompt_ia = "Analyze this wound image. Describe tissue types, signs of infection, and periwound skin condition."
+                prompt_ia = (
+                "Analisa esta imagem de ferida detalhadamente em PORTUGUÊS DE PORTUGAL. "
+                "Identifica: tipos de tecido (granulação, esfacelo, necrose), "
+                "sinais de infeção, tipo de exsudado e a condição da pele perilesional."
+            )
                 messages = [
-                    {"role": "system", "content": [{"type": "text", "text": "You are a Wound Care Specialist."}]},
-                    {"role": "user", "content": [
-                        {"type": "text", "text": prompt_ia},
-                        {"type": "image", "image": image}
-                    ]}
-                ]
+                {"role": "system", "content": [{"type": "text", "text": "És um Especialista em Tratamento de Feridas e Estomaterapia."}]},
+                {"role": "user", "content": [
+                    {"type": "text", "text": prompt_ia},
+                    {"type": "image", "image": image}
+                ]}
+            ]
                 
-                out = pipe(text=messages, max_new_tokens=512)
+                out = pipe(text=messages, max_new_tokens=1024, generate_kwargs = {"max_length": None})
                 analise_ia = out[0]["generated_text"][-1]["content"]
                 
                 # --- TUA LÓGICA DE API EXISTENTE ---
